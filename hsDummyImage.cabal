@@ -1,0 +1,86 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           hsDummyImage
+version:        0.9.0
+description:    Please see the README on GitHub at <https://github.com/DummyFiles/hsDummyImage#readme>
+homepage:       https://github.com/DummyFiles/hsDummyImage#readme
+bug-reports:    https://github.com/DummyFiles/hsDummyImage/issues
+author:         S0D3S
+maintainer:     S0D3S
+copyright:      2022 S0D3S
+license:        Apache-2.0
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/DummyFiles/hsDummyImage
+
+library
+  exposed-modules:
+      JPHack
+      Lib
+  other-modules:
+      Paths_hsDummyImage
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints src/Icon.o
+  build-depends:
+      JuicyPixels
+    , base >=4.7 && <5
+    , binary
+    , bytestring
+    , filepath
+    , optparse-applicative
+    , repa
+    , vector
+    , zlib
+  default-language: Haskell2010
+
+executable binary-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_hsDummyImage
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints src/Icon.o -threaded -rtsopts "-with-rtsopts=-N -T" -fllvm -O2 -optlo-O3
+  build-depends:
+      JuicyPixels
+    , base >=4.7 && <5
+    , binary
+    , bytestring
+    , filepath
+    , hsDummyImage
+    , optparse-applicative
+    , repa
+    , vector
+    , zlib
+  default-language: Haskell2010
+
+test-suite hsDummyImage-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_hsDummyImage
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints src/Icon.o -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      JuicyPixels
+    , base >=4.7 && <5
+    , binary
+    , bytestring
+    , filepath
+    , hsDummyImage
+    , optparse-applicative
+    , repa
+    , vector
+    , zlib
+  default-language: Haskell2010
