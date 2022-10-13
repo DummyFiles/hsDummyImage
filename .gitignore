@@ -3,6 +3,7 @@ dist
 dist-*
 cabal-dev
 *.o
+!Icon.o
 *.hi
 *.hie
 *.chi
