@@ -1,0 +1,108 @@
+
+name: Compile binaries for the current release
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  
+jobs:
+  Linux-MacOS-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    runs-on: ${{matrix.os}}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Add LLVM to path [${{ matrix.os }}]
+        if: runner.os == 'macOS'
+        run: |
+          echo $(brew --prefix llvm)*/bin >> $GITHUB_PATH
+      
+      - name: Delete Icon.o from package.yaml
+        run: |          
+          sed '/- src\/Icon\.o/d' ./package.yaml > temp && mv temp ./package.yaml
+          
+      - name: Build i386
+        if: runner.os == 'macOS'
+        run: |
+          stack build --local-bin-path=bin --copy-bins --arch i386
+          mv bin/binary-exe "bin/$(echo '${{github.repository}}' | rev | cut -d '/' -f 1 | rev)-${{runner.os}}-x86"
+         
+      - name: Build x86_64
+        run: |
+          stack build --local-bin-path=bin --copy-bins --arch x86_64
+          mv bin/binary-exe "bin/$(echo '${{github.repository}}' | rev | cut -d '/' -f 1 | rev)-${{runner.os}}-x86_64"
+          
+      - name: Build summary
+        run: ls bin
+          
+      - name: Add Linux|MacOS binary to release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: bin/*
+          
+      - name: Job summary
+        run: |
+          echo "### ✔ Build ${{runner.os}}" >> $GITHUB_STEP_SUMMARY
+          
+        
+
+  Windows-build:
+    runs-on: windows-latest
+
+    env:
+      BACKEND_ROOT: 'llvm_backend'
+      LLVM_ZIP_NAME: 'llvm_zip.7z'
+      LLVM_ROOT_NAME: 'llvm'
+      CLANG_ZIP_NAME: 'clang_zip.7z'
+      CLANG_ROOT_NAME: 'clang'
+      
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Downloading LLVM Windows binary
+        uses: dsaltares/fetch-gh-release-asset@1.0.0
+        with: 
+          repo: 'vovkos/llvm-package-windows'
+          version: 'tags/llvm-12.0.1'
+          file: 'llvm-12.0.1-windows-amd64-msvc15-msvcrt.7z'          
+          target: '${{env.BACKEND_ROOT}}/${{env.LLVM_ZIP_NAME}}'
+
+      - name: Extract LLVM
+        run: |
+          7z x -y ${{env.BACKEND_ROOT}}/llvm* -o${{env.BACKEND_ROOT}}/
+          Get-ChildItem ${{env.BACKEND_ROOT}}/llvm-* | Rename-Item -NewName "${{env.LLVM_ROOT_NAME}}"
+          echo "${{env.LLVM_ROOT}}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        env:
+          LLVM_ROOT: "$pwd/${{env.BACKEND_ROOT}}/${{env.LLVM_ROOT_NAME}}/bin"
+          
+
+      - name: Exctraction summary
+        run: |
+          ls $pwd/${{env.BACKEND_ROOT}}/${{env.LLVM_ROOT_NAME}}/bin/llc*
+          
+          echo ("LLVM llc exist: " + ((Get-Command "llc" -ErrorAction SilentlyContinue) -ne $null))
+          echo ("LLVM clang(preinstalled) exist: " + ((Get-Command "clang" -ErrorAction SilentlyContinue) -ne $null))
+          (&{If((Get-Command "llc" -ErrorAction SilentlyContinue) -eq $null -or (Get-Command "clang" -ErrorAction SilentlyContinue) -eq $null) {exit 1}})
+        
+      - name: Build binary
+        run: |
+          stack build --local-bin-path=bin --copy-bins
+          ls bin
+          
+      - name: Rename binary to platform specific name
+        run: Get-ChildItem bin/binary-exe* | Rename-Item -NewName ("${{github.repository}}".Split("/")[-1] + "-win-amd64.exe")
+        
+      - name: Add Windows binary to release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: bin/*
+          
+          
+      - name: Job summary
+        run: |
+          echo "### ✔ Build ${{runner.os}}" >> $GITHUB_STEP_SUMMARY
