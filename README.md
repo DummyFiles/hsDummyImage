@@ -52,3 +52,24 @@ For example:
 > hsDummyImage.exe -s 204 -u mb -f matrix
 ```
 \[1] The output name can contain either exactly two placeholders (%v) or none. The placeholders will be replaced by the size and units of measurement, respectively.
+
+<summary><h2 style="display: inline-block;">🗜️ Functions List</h2></summary>
+
+<br>
+
+| NAME | SCALE | SPEED | IMAGE |
+| :--- | :---: | :---: | :---: |
+| [`stains`](docs/available_functions.md#stains) | ✔ | 🟢 | <a href="docs/available_functions.md#stains"><img src="docs/assets/stains_128_kb.png" width=64></a> |
+| [`hypnotoad`](docs/available_functions.md#hypnotoad) | ✔ | 🟢 | <a href="docs/available_functions.md#hypnotoad"><img src="docs/assets/hypnotoad_128_kb.png" width=64></a> |
+| [`fastest_mono`](docs/available_functions.md#fastest_mono) | ✔ | 🟢 | <a href="docs/available_functions.md#fastest_mono"><img src="docs/assets/fastest_mono_1_kb.png" width=64></a> |
+| [`alt_stains`](docs/available_functions.md#alt_stains) | ✔ | 🟡 | <a href="docs/available_functions.md#alt_stains"><img src="docs/assets/alt_stains_128_kb.png" width=64></a> |
+| [`matrix`](docs/available_functions.md#matrix) | ✔ | 🟢 | <a href="docs/available_functions.md#matrix"><img src="docs/assets/matrix_128_kb.png" width=64></a> |
+| [`cold_grid`](docs/available_functions.md#cold_grid) | ✔ | 🟠 | <a href="docs/available_functions.md#cold_grid"><img src="docs/assets/cold_grid_128_kb.png" width=64></a> |
+| [`high_crosswalk`](docs/available_functions.md#high_crosswalk) | ✖ | 🟢 | <a href="docs/available_functions.md#high_crosswalk"><img src="docs/assets/high_crosswalk_128_kb.png" width=64></a> |
+
+<summary><h2 style="display: inline-block;">🔗 Links</h2></summary>
+
+* [_perfomanceTester](https://github.com/DummyFiles/_perfomanceTester)
+
+
+
