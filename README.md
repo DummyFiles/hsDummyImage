@@ -70,6 +70,7 @@ For example:
 <summary><h2 style="display: inline-block;">🔗 Links</h2></summary>
 
 * [_perfomanceTester](https://github.com/DummyFiles/_perfomanceTester)
+* [Functions benchmark and overview](docs/available_functions.md)
 
 
 
