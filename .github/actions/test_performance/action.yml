@@ -1,0 +1,61 @@
+name: 'Performance test'
+description: 'Testing performance via DummyFiles/_perfomanceTester'
+
+inputs:
+  binary-name:
+    required: true
+    type: string
+  binary-run-command:
+    required: true
+    type: string
+    
+outputs:
+  md-output:
+    description: "Markdown report"
+    value: ${{ steps.md-report.outputs.value }}
+  json-output:
+    description: "JSON report"
+    value: ${{ steps.json-report.outputs.value }}
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        echo "JSON_FILE=reports/report.json" >> $GITHUB_ENV
+        echo "MD_FILE=reports/report.md" >> $GITHUB_ENV
+      
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+          
+    - uses: actions/checkout@v3
+      with:
+        path: ./tester
+        repository: 'DummyFiles/_perfomanceTester'
+          
+    - name: Downloading DummyFiles/_perfomanceTester
+      uses: dsaltares/fetch-gh-release-asset@1.0.0
+      with: 
+        file: ${{ inputs.binary-name }}
+        target: ./tester/${{ inputs.binary-name }}
+                
+    - name: Run performance test
+      shell: bash
+      working-directory: ./tester
+      run: |
+        chmod 777 ${{inputs.binary-name}}
+        ls ./*
+        mkdir reports
+        python main.py -b ${{inputs.binary-run-command}} -d -r 1 --md-output ${{env.MD_FILE}} --json-output ${{env.JSON_FILE}} -t 1-kb,128-kb,512-kb,1-mb,16-mb --disable-console-spinner
+    
+    - name: Set JSON report
+      id: json-report
+      working-directory: ./tester
+      run: echo "::set-output name=value::$(realpath ${{env.JSON_FILE}})"
+      shell: bash
+      
+    - name: Set Markdown report
+      id: md-report
+      working-directory: ./tester
+      run: echo "::set-output name=value::$(realpath ${{env.MD_FILE}})"
+      shell: bash
