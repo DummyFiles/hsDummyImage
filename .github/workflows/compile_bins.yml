@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest] #, macos-latest]
     
     runs-on: ${{matrix.os}}
     steps:
@@ -19,13 +19,23 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           echo $(brew --prefix llvm)*/bin >> $GITHUB_PATH
+          
+      - name: Install LLVM and Clang
+        if: runner.os == 'Linux'
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "13"
+          
+      - name: Install LLVM dep
+        if: runner.os == 'Linux'
+        run: sudo apt install libtinfo5
       
       - name: Delete Icon.o from package.yaml
         run: |          
           sed '/- src\/Icon\.o/d' ./package.yaml > temp && mv temp ./package.yaml
           
       - name: Build i386
-        if: runner.os == 'macOS'
+        if: false && runner.os == 'macOS'
         run: |
           stack build --local-bin-path=bin --copy-bins --arch i386
           mv bin/binary-exe "bin/$(echo '${{github.repository}}' | rev | cut -d '/' -f 1 | rev)-${{runner.os}}-x86"
@@ -35,11 +45,16 @@ jobs:
           stack build --local-bin-path=bin --copy-bins --arch x86_64
           mv bin/binary-exe "bin/$(echo '${{github.repository}}' | rev | cut -d '/' -f 1 | rev)-${{runner.os}}-x86_64"
           
+      - name: Add binary name to ENV
+        working-directory: ./bin
+        run: |
+          echo "BINARY_NAME=$(ls * | head -n1)"  >> $GITHUB_ENV
+          
       - name: Build summary
         run: ls bin
           
-      - name: Add Linux|MacOS binary to release
-        uses: softprops/action-gh-release@v1
+      - name: Add ${{runner.os}} binary to release
+        uses: softprops/action-gh-release@v0.1.15
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: bin/*
@@ -48,10 +63,39 @@ jobs:
         run: |
           echo "### ✔ Build ${{runner.os}}" >> $GITHUB_STEP_SUMMARY
           
+      - name: Run performance test
+        id: perf-test
+        uses: ./.github/actions/test_performance
+        with:
+          binary-name: ${{env.BINARY_NAME}}
+          binary-run-command: ./${{env.BINARY_NAME}}
+      
+      - name: Perf test summary
+        run: |
+          cat ${{steps.perf-test.outputs.md-output}} >> $GITHUB_STEP_SUMMARY
+          echo "MD_REPORT<<EOF" >> $GITHUB_ENV
+          echo "<details><summary>📈 Performance test. <b>[${{runner.os}}]</b> build</summary>" >> $GITHUB_ENV
+          echo -e "\n<br>\n" >> $GITHUB_ENV
+          cat ${{steps.perf-test.outputs.md-output}} >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "</details>" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+      - name: Add report to release
+        uses: softprops/action-gh-release@v0.1.15
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body: ${{env.MD_REPORT}}
+          append_body: true
+          
         
 
   Windows-build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [windows-latest] 
+        
+    runs-on: ${{matrix.os}}
 
     env:
       BACKEND_ROOT: 'llvm_backend'
@@ -94,15 +138,51 @@ jobs:
           ls bin
           
       - name: Rename binary to platform specific name
-        run: Get-ChildItem bin/binary-exe* | Rename-Item -NewName ("${{github.repository}}".Split("/")[-1] + "-win-amd64.exe")
+        working-directory: ./bin
+        run: |
+          Get-ChildItem binary-exe* | Rename-Item -NewName ("${{github.repository}}".Split("/")[-1] + "-win-amd64.exe")
+          
+      - name: Add binary name to ENV
+        working-directory: ./bin
+        run: |
+          echo "BINARY_NAME=$((Get-ChildItem * | Select-Object -First 1).Name)" >> $env:GITHUB_ENV
+          echo "${{env.BINARY_NAME}}"
         
       - name: Add Windows binary to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v0.1.15
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: bin/*
           
           
       - name: Job summary
+        shell: bash
         run: |
           echo "### ✔ Build ${{runner.os}}" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Run performance test
+        id: perf-test
+        uses: ./.github/actions/test_performance
+        with:
+          binary-name: ${{env.BINARY_NAME}}
+          binary-run-command: ${{env.BINARY_NAME}}
+          
+      
+      - name: Perf test summary
+        shell: bash
+        run: |
+          cat ${{steps.perf-test.outputs.md-output}} >> $GITHUB_STEP_SUMMARY
+          echo "MD_REPORT<<EOF" >> $GITHUB_ENV
+          echo "<details><summary>📈 Performance test. <b>[${{runner.os}}]</b> build</summary>" >> $GITHUB_ENV
+          echo -e "\n<br>\n" >> $GITHUB_ENV
+          cat ${{steps.perf-test.outputs.md-output}} >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "</details>" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+      - name: Add report to release
+        uses: softprops/action-gh-release@v0.1.15
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body: ${{env.MD_REPORT}}
+          append_body: true
